@@ -37,12 +37,67 @@ export class PostsService {
         });
     }
 
-    async findAll() {
-        return this.postsRepository.findAll({
-            where: { status: PostStatus.PUBLISHED },
-            orderBy: { createdAt: 'desc' },
-            take: 25,
-        });
+    async findAll(query?: {
+        limit?: number;
+        page?: number;
+        type?: string;
+        status?: string;
+        authorId?: string;
+        tag?: string;
+        sortBy?: string;
+        sortOrder?: string;
+    }) {
+        const {
+            limit = 25,
+            page = 1,
+            type,
+            status,
+            authorId,
+            tag,
+            sortBy = 'createdAt',
+            sortOrder = 'desc',
+        } = query || {};
+
+        const skip = (page - 1) * limit;
+        const where: any = {};
+
+        if (type) where.type = type.toUpperCase();
+        if (status) where.status = status.toUpperCase();
+        if (authorId) where.authorId = authorId;
+        if (tag) {
+            where.tags = {
+                some: {
+                    tag: {
+                        name: {
+                            equals: tag,
+                            mode: 'insensitive',
+                        },
+                    },
+                },
+            };
+        }
+
+        const orderBy: any = {};
+        if (sortBy === 'likesCount' || sortBy === 'commentsCount') {
+            orderBy[sortBy.replace('Count', '')] = { _count: sortOrder };
+        } else {
+            orderBy[sortBy] = sortOrder;
+        }
+
+        const [posts, total] = await Promise.all([
+            this.postsRepository.findAll({ where, skip, take: limit, orderBy }),
+            this.postsRepository.count(where),
+        ]);
+
+        return {
+            posts,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
     async findOne(id: string) {

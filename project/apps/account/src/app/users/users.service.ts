@@ -84,4 +84,25 @@ export class UsersService {
             subscribersCount,
         };
     }
+
+    async findAll(filters: { limit?: number; page?: number; email?: string }) {
+        const { users, total } = await this.userRepository.findAll(filters);
+        const { limit = 25, page = 1 } = filters;
+
+        return {
+            users: users.map(user => ({
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                avatar: user.avatar,
+                createdAt: user.createdAt,
+            })),
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
 }
