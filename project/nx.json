@@ -38,7 +38,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/account-e2e/**/*"]
+      "exclude": ["apps/account-e2e/**/*", "blog-e2e/**/*"]
     }
   ],
   "targetDefaults": {

@@ -1,0 +1,10 @@
+# database
+.env
+.env.*
+*.db
+*.sqlite
+
+# Prisma
+prisma/migrations/
+
+/generated/prisma

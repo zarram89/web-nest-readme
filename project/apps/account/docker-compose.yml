@@ -13,6 +13,12 @@ services:
       - readme-mongo-data:/data/db
     networks:
       - readme-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   readme-mongo-express:
     image: mongo-express:latest

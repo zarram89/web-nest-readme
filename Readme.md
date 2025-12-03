@@ -1117,3 +1117,40 @@ apps/account/
 **Следующие шаги:**
 - Повторить процесс для Blog Service (если потребуется MongoDB)
 - Или перейти к PostgreSQL для Blog Service (Module 4)
+
+## Module 4 Task 1: PostgreSQL Integration for Blog Service
+
+### Objective
+Integrate PostgreSQL with Prisma ORM for the Blog Service to handle structured data like posts, comments, and likes.
+
+### Implementation Details
+1.  **Infrastructure**:
+    *   **PostgreSQL**: Running on port `5433` (mapped to 5432 inside container).
+    *   **PgAdmin**: Running on port `5050` for database management.
+    *   **Docker Compose**: Configured in `apps/blog/docker-compose.yml` with healthchecks.
+
+2.  **Prisma ORM**:
+    *   **Schema**: Defined models for `Post` (with types VIDEO, TEXT, QUOTE, PHOTO, LINK), `Comment`, `Like`, and `Tag`.
+    *   **Client**: Generated to `node_modules/.prisma/client-blog`.
+    *   **Seeding**: Implemented `prisma/seed.ts` using `tsx` to populate initial data.
+
+3.  **Blog Service**:
+    *   **Modules**: `PrismaModule` (Global) and `PostsModule`.
+    *   **API**: Implemented REST endpoints for Posts CRUD operations.
+    *   **Documentation**: Swagger UI available at `/api/docs`.
+
+### Verification
+*   **Database**: Verified tables creation via PgAdmin.
+*   **API**: Verified `GET /api/posts` returns seeded data with relations (tags, counts).
+*   **Commands**:
+    *   `npx nx run blog:db-migrate`: Applies schema changes.
+    *   `npx nx run blog:db-fill`: Seeds the database.
+    *   `npx nx run blog:serve`: Starts the service.
+
+### Technical Decisions
+*   **Prisma 6**: Chosen over v7 to ensure stability and compatibility with standard configuration patterns.
+*   **TSX**: Used for executing TypeScript seed scripts in ESM environment.
+*   **Repository Pattern**: Used to separate database logic from business logic.
+
+See [module4-task1-execution.md](./project/module4-task1-execution.md) for full execution log.
+
