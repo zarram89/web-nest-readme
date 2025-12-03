@@ -1,0 +1,37 @@
+version: "3"
+services:
+  readme-mongo:
+    image: mongo:latest
+    container_name: readme-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - readme-mongo-data:/data/db
+    networks:
+      - readme-network
+
+  readme-mongo-express:
+    image: mongo-express:latest
+    container_name: readme-mongo-express
+    restart: always
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@readme-mongo:27017/
+    networks:
+      - readme-network
+    depends_on:
+      - readme-mongo
+
+volumes:
+  readme-mongo-data:
+
+networks:
+  readme-network:
+    driver: bridge

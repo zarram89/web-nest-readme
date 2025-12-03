@@ -1,78 +1,71 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { UserModel } from '../models/user.model';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
-    private users: Map<string, UserEntity> = new Map();
+    constructor(
+        @InjectModel(UserModel.name) private readonly userModel: Model<UserModel>
+    ) { }
+
+    async create(user: UserEntity): Promise<UserEntity> {
+        const newUser = new this.userModel(user);
+        const savedUser = await newUser.save();
+        return new UserEntity(savedUser.toObject());
+    }
 
     async findById(id: string): Promise<UserEntity | null> {
-        return this.users.get(id) || null;
+        const user = await this.userModel.findById(id).exec();
+        return user ? new UserEntity(user.toObject()) : null;
     }
 
     async findByEmail(email: string): Promise<UserEntity | null> {
-        for (const user of this.users.values()) {
-            if (user.email === email) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    async create(user: UserEntity): Promise<UserEntity> {
-        this.users.set(user.id, user);
-        return user;
+        const user = await this.userModel.findOne({ email }).exec();
+        return user ? new UserEntity(user.toObject()) : null;
     }
 
     async update(id: string, data: Partial<UserEntity>): Promise<UserEntity | null> {
-        const user = this.users.get(id);
-        if (!user) {
-            return null;
-        }
-        Object.assign(user, data);
-        return user;
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(id, data, { new: true })
+            .exec();
+        return updatedUser ? new UserEntity(updatedUser.toObject()) : null;
     }
 
     async delete(id: string): Promise<boolean> {
-        return this.users.delete(id);
-    }
-
-    async findAll(): Promise<UserEntity[]> {
-        return Array.from(this.users.values());
+        const result = await this.userModel.findByIdAndDelete(id).exec();
+        return !!result;
     }
 
     async addSubscription(userId: string, targetUserId: string): Promise<UserEntity | null> {
-        const user = this.users.get(userId);
-        if (!user) {
-            return null;
-        }
-        if (!user.subscriptions.includes(targetUserId)) {
-            user.subscriptions.push(targetUserId);
-        }
-        return user;
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(
+                userId,
+                { $addToSet: { subscriptions: targetUserId } },
+                { new: true }
+            )
+            .exec();
+        return updatedUser ? new UserEntity(updatedUser.toObject()) : null;
     }
 
     async removeSubscription(userId: string, targetUserId: string): Promise<UserEntity | null> {
-        const user = this.users.get(userId);
-        if (!user) {
-            return null;
-        }
-        user.subscriptions = user.subscriptions.filter(id => id !== targetUserId);
-        return user;
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(
+                userId,
+                { $pull: { subscriptions: targetUserId } },
+                { new: true }
+            )
+            .exec();
+        return updatedUser ? new UserEntity(updatedUser.toObject()) : null;
     }
 
     async countPosts(userId: string): Promise<number> {
-        // This would be implemented by querying the Blog service
-        // For now, return 0 as placeholder
+        // Placeholder - will be implemented via microservice communication later
         return 0;
     }
 
     async countSubscribers(userId: string): Promise<number> {
-        let count = 0;
-        for (const user of this.users.values()) {
-            if (user.subscriptions.includes(userId)) {
-                count++;
-            }
-        }
-        return count;
+        return this.userModel.countDocuments({ subscriptions: userId }).exec();
     }
 }
