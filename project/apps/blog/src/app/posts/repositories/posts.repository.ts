@@ -89,4 +89,8 @@ export class PostsRepository {
             where: { id },
         });
     }
+
+    async count(where?: Prisma.PostWhereInput): Promise<number> {
+        return this.prisma.post.count({ where });
+    }
 }

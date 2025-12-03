@@ -6,11 +6,13 @@ import {
     Patch,
     Param,
     Delete,
+    Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PostsQueryDto } from './dto/posts-query.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -25,10 +27,10 @@ export class PostsController {
     }
 
     @Get()
-    @ApiOperation({ summary: 'Get all posts' })
+    @ApiOperation({ summary: 'Get posts with filtering and pagination' })
     @ApiResponse({ status: 200, description: 'List of posts' })
-    findAll() {
-        return this.postsService.findAll();
+    findAll(@Query() query: PostsQueryDto) {
+        return this.postsService.findAll(query);
     }
 
     @Get(':id')

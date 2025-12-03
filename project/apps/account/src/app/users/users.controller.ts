@@ -1,12 +1,20 @@
-import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UsersQueryDto } from './dto/users-query.dto';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
+
+    @Get()
+    @ApiOperation({ summary: 'Get users list with pagination' })
+    @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
+    async getUsers(@Query() query: UsersQueryDto) {
+        return this.usersService.findAll(query);
+    }
 
     @Get(':id')
     @ApiOperation({ summary: 'Get user details' })

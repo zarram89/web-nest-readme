@@ -68,4 +68,24 @@ export class UserRepository {
     async countSubscribers(userId: string): Promise<number> {
         return this.userModel.countDocuments({ subscriptions: userId }).exec();
     }
+
+    async findAll(filters: { limit?: number; page?: number; email?: string }): Promise<{ users: UserEntity[]; total: number }> {
+        const { limit = 25, page = 1, email } = filters;
+        const skip = (page - 1) * limit;
+
+        const query: any = {};
+        if (email) {
+            query.email = { $regex: email, $options: 'i' };
+        }
+
+        const [users, total] = await Promise.all([
+            this.userModel.find(query).skip(skip).limit(limit).exec(),
+            this.userModel.countDocuments(query).exec(),
+        ]);
+
+        return {
+            users: users.map(user => new UserEntity(user.toObject())),
+            total,
+        };
+    }
 }
