@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/client-blog"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostType {
+  VIDEO
+  TEXT
+  QUOTE
+  PHOTO
+  LINK
+}
+
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+}
+
+model Post {
+  id           String     @id @default(uuid())
+  type         PostType
+  status       PostStatus @default(DRAFT)
+  authorId     String
+  createdAt    DateTime   @default(now())
+  publishedAt  DateTime?
+  updatedAt    DateTime   @updatedAt
+  isRepost     Boolean    @default(false)
+  originalId   String?
+  originalPost Post?      @relation("Reposts", fields: [originalId], references: [id])
+  reposts      Post[]     @relation("Reposts")
+
+  // Common fields for all types
+  tags     PostTag[]
+  comments Comment[]
+  likes    Like[]
+
+  // Type-specific fields (nullable)
+  // VIDEO
+  title       String? // for VIDEO and TEXT
+  videoUrl    String? // for VIDEO
+
+  // TEXT
+  announcement String? // for TEXT
+  text         String? // for TEXT
+
+  // QUOTE
+  quoteText   String? // for QUOTE
+  quoteAuthor String? // for QUOTE
+
+  // PHOTO
+  photoUrl String? // for PHOTO
+
+  // LINK
+  url         String? // for LINK
+  description String? // for LINK
+
+  @@index([authorId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Tag {
+  id    String    @id @default(uuid())
+  name  String    @unique
+  posts PostTag[]
+
+  @@index([name])
+}
+
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([postId])
+  @@index([tagId])
+}
