@@ -1127,3 +1127,42 @@ apps/account/
 
 See [module4-task1-execution.md](./project/module4-task1-execution.md) for full execution log.
 
+## Module 6 Task 1: Notification Service
+
+### Описание задачи
+Реализация микросервиса уведомлений (`notify`) с использованием RabbitMQ для асинхронного получения событий и отправки email.
+
+### Реализованный функционал
+1.  **Notification Service**:
+    - Создан новый микросервис на NestJS.
+    - Настроен как гибридное приложение (HTTP + RabbitMQ).
+    - **MailModule**: Интеграция с `nodemailer` и `@nestjs-modules/mailer` (Handlebars шаблоны).
+    - **NewsletterModule**: Управление подписками и рассылками (MongoDB).
+    - **RabbitMQ**: Обработка событий `user.registered` и `post.created`.
+2.  **Инфраструктура**:
+    - `docker-compose.yml`: RabbitMQ, MailDev (Fake SMTP), MongoDB.
+3.  **Интеграция**:
+    - Account Service отправляет событие `user.registered` при регистрации пользователя.
+
+### Инструкция по запуску
+1.  Запустить инфраструктуру:
+    ```bash
+    cd apps/notify
+    docker-compose up -d
+    ```
+2.  Запустить сервисы:
+    ```bash
+    npx nx serve notify
+    npx nx serve account
+    ```
+3.  **Тестирование**:
+    - Зарегистрировать пользователя -> Проверить MailDev (http://localhost:1080) на наличие приветственного письма.
+    - Отправить рассылку: `POST http://localhost:3002/api/newsletter/send`.
+
+### Переменные окружения (`apps/notify/.env`)
+```env
+RABBITMQ_HOST=localhost
+MAIL_SMTP_PORT=1025
+MONGO_DATABASE=readme-notify
+```
+

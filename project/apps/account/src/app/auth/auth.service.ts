@@ -1,37 +1,41 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterDto as CreateUserDto } from './dto/register.dto';
+import { LoginDto as LoginUserDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @Inject('NOTIFY_SERVICE') private readonly notifyClient: ClientProxy,
   ) { }
 
-  async register(registerDto: RegisterDto) {
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+  async register(dto: CreateUserDto) {
+    const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
-    const user = await this.usersService.create(registerDto);
-    const tokens = await this.generateTokens(user.id, user.email);
+    const newUser = await this.usersService.create(dto);
 
+    this.notifyClient.emit({ cmd: 'user.registered' }, {
+      email: newUser.email,
+      name: newUser.name,
+    }).subscribe();
+
+    const tokens = await this.generateTokens(newUser.id, newUser.email);
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt,
+      ...newUser,
       ...tokens,
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginUserDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -72,8 +76,12 @@ export class AuthService {
   private async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
 
-    const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.jwtService.signAsync(payload);
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<string>('jwt.accessExpiration') as any,
+    });
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<string>('jwt.refreshExpiration') as any,
+    });
 
     return {
       accessToken,

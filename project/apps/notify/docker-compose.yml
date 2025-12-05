@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: readme-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  maildev:
+    image: maildev/maildev
+    container_name: readme-maildev
+    ports:
+      - "1080:1080" # Web UI
+      - "1025:1025" # SMTP
+    environment:
+      MAILDEV_WEB_PORT: 1080
+      MAILDEV_SMTP_PORT: 1025
+
+  notify-mongo:
+    image: mongo:5.0
+    container_name: readme-notify-mongo
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: readme-notify
+    volumes:
+      - notify_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notify-mongo-express:
+    image: mongo-express
+    container_name: readme-notify-mongo-express
+    ports:
+      - "8083:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin@notify-mongo:27017/
+    depends_on:
+      - notify-mongo
+
+volumes:
+  rabbitmq_data:
+  notify_mongo_data:
