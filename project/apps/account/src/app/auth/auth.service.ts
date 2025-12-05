@@ -77,9 +77,11 @@ export class AuthService {
     const payload = { sub: userId, email };
 
     const accessToken = await this.jwtService.signAsync(payload, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expiresIn: this.configService.get<string>('jwt.accessExpiration') as any,
     });
     const refreshToken = await this.jwtService.signAsync(payload, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expiresIn: this.configService.get<string>('jwt.refreshExpiration') as any,
     });
 
