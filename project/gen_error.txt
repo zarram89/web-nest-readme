@@ -1,0 +1,7 @@
+
+ NX  Generating @nx/nest:application
+
+
+ NX   Schema does not support positional arguments. Argument 'api-gateway' found
+
+

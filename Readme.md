@@ -1166,3 +1166,41 @@ MAIL_SMTP_PORT=1025
 MONGO_DATABASE=readme-notify
 ```
 
+
+## Задание 7 module6-task1 (API Gateway)
+
+К выполнению этого задания приступайте только после завершения разработки всех микросервисов.
+
+В этом задании вы ещё раз потренируетесь в работе с Nest.js и запрограммируете отдельный сервис, который выполняет роль API Gateway. Основная задача этого сервиса — предоставить API (точку входа) для фронтенда.
+
+Создайте в монорепозитории новый проект для API Gateway.
+Спроектируйте REST API. При проектировании API опирайтесь на макет и техническое задание. Представьте, что вам необходимо разработать API для фронтенда. Помните, что API Gateway — это слой представления данных. В нём не должно быть бизнес-логики, только трансформация данных, аутентификация/авторизация и агрегация.
+Подключите swagger модуль и расставьте все необходимые аннотации для генерации документации.
+
+### Execution Log
+- [x] Generated `api-gateway` application
+- [x] Configured environment and dependencies (`@nestjs/axios`)
+- [x] Implemented proxy controllers for Account, Blog, and Notify services
+- [x] Configured Swagger documentation
+
+### Troubleshooting & Key Learnings
+
+During the implementation of the API Gateway and microservices integration, several critical issues were encountered and resolved:
+
+1.  **MongoDB Port Conflict (EADDRINUSE: 27017)**
+    *   **Problem:** The Docker container `readme-mongo` failed to start because port `27017` was already in use by a local MongoDB service running on the host machine.
+    *   **Solution:** Stop the local MongoDB service or change the exposed port in `docker-compose.yml` (e.g., `27020:27017`) and update `.env` files accordingly.
+
+2.  **Dependency Injection Errors (UnknownDependenciesException)**
+    *   **Problem:** The `Blog Service` failed to start with an error stating it couldn't resolve `ConfigService` for `NOTIFY_SERVICE` clients.
+    *   **Cause:** While `ConfigService` was injected into the `useFactory` function, the `ConfigModule` itself was not imported in the `PostsModule`.
+    *   **Solution:** explicitly added `ConfigModule` to the `imports` array of `PostsModule`.
+
+3.  **Missing Microservice Dependencies**
+    *   **Problem:** `Account Service` failed to build due to missing `amqp-connection-manager`.
+    *   **Solution:** Installed `amqp-connection-manager` and `amqplib` to support RabbitMQ connections.
+
+4.  **Swagger UI Availability**
+    *   **Problem:** Swagger UI initially showed only the default endpoint.
+    *   **Cause:** Proxy controllers (`AuthController`, `PostsController`, etc.) were not registered in the Gateway's `AppModule`.
+    *   **Solution:** Registered all controllers and `HttpModule` in `AppModule`.

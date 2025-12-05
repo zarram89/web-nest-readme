@@ -23,11 +23,11 @@ import jwtConfig from '../config/jwt.config';
     ClientsModule.registerAsync([
       {
         name: 'NOTIFY_SERVICE',
-        useFactory: () => ({
+        useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [`amqp://${process.env.RABBITMQ_USER || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin'}@${process.env.RABBITMQ_HOST || 'localhost'}:${process.env.RABBITMQ_PORT || 5672}`],
-            queue: process.env.RABBITMQ_QUEUE_NOTIFY || 'notify_queue',
+            urls: [`amqp://${configService.get<string>('RABBITMQ_USER') || 'admin'}:${configService.get<string>('RABBITMQ_PASSWORD') || 'admin'}@${configService.get<string>('RABBITMQ_HOST') || 'localhost'}:${configService.get<string>('RABBITMQ_PORT') || 5672}`],
+            queue: configService.get<string>('RABBITMQ_QUEUE_NOTIFY') || 'notify_queue',
             queueOptions: {
               durable: true,
             },
