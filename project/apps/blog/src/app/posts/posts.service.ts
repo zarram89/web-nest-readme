@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PostsRepository } from './repositories/posts.repository';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostStatus } from '.prisma/client-blog';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PostsService {
     constructor(
         private readonly postsRepository: PostsRepository,
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        @Inject('NOTIFY_SERVICE') private readonly notifyClient: ClientProxy,
     ) { }
 
     async create(createPostDto: CreatePostDto) {
@@ -30,11 +32,18 @@ export class PostsService {
             )
             : [];
 
-        return this.postsRepository.create({
+        const newPost = await this.postsRepository.create({
             ...postData,
             publishedAt: postData.status === PostStatus.PUBLISHED ? new Date() : null,
             tags: tagConnections.length > 0 ? { create: tagConnections } : undefined,
         });
+
+        this.notifyClient.emit({ cmd: 'post.created' }, {
+            authorId: newPost.authorId,
+            post: newPost
+        }).subscribe();
+
+        return newPost;
     }
 
     async findAll(query?: {
